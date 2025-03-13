@@ -12,10 +12,10 @@ build:
 
 # Database operations
 init-db:
-	go run pkg/db/init/db_init.go
+	go run pkg/db/dbinit/db_init.go
 
 schema:
-	go run pkg/db/schema/init_db.go
+	go run pkg/db/init/init.go
 
 # Legacy sqlc migrations
 migrate:

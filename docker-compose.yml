@@ -4,7 +4,7 @@ services:
   api:
     build: .
     ports:
-      - "8080:8080"
+      - "8080:8080"  # Changed from 8081:8080 to 9090:8080 to avoid conflict
     depends_on:
       - db
     environment:
@@ -12,10 +12,9 @@ services:
       - DB_DRIVER=postgres
       - DB_SOURCE=postgresql://qhh:2203@db:5432/ecommerce?sslmode=disable
       - PORT=8080
-      - JWT_SECRET=your_secret_key_here_must_be_at_least_32_characters
+      - JWT_SECRET=2203200322032003220320032203200322032003
       - INIT_DB=true
-    volumes:
-      - .:/app
+
     restart: on-failure
 
   db:

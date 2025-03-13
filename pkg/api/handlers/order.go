@@ -29,6 +29,7 @@ type orderItemRequest struct {
 }
 
 type createOrderRequest struct {
+	ShopID          string             `json:"shop_id" binding:"required"` // Thêm ShopID
 	ShippingAddress string             `json:"shipping_address" binding:"required"`
 	Items           []orderItemRequest `json:"items" binding:"required,min=1"`
 }
@@ -54,9 +55,24 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 		totalAmount += item.Price * float64(item.Quantity)
 	}
 
+	// Parse shop ID
+	shopID, err := uuid.Parse(req.ShopID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid shop ID"})
+		return
+	}
+
+	// Check if shop exists
+	_, err = h.store.GetShopByID(c, shopID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "shop not found"})
+		return
+	}
+
 	// Prepare order
 	order := &models.Order{
 		UserID:          payload.UserID,
+		ShopID:          shopID, // Thêm ShopID
 		TotalAmount:     totalAmount,
 		ShippingAddress: req.ShippingAddress,
 		Status:          models.StatusPending,
@@ -66,7 +82,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 	var orderItems []*models.OrderItem
 	err = h.store.RunInTransaction(c, func(tx *pg.Tx) error {
 		// Create order
-		if err := tx.ModelContext(c, order).Insert(); err != nil {
+		if _, err := tx.ModelContext(c, order).Insert(); err != nil {
 			return err
 		}
 
@@ -98,7 +114,7 @@ func (h *OrderHandler) CreateOrder(c *gin.Context) {
 				Quantity:        item.Quantity,
 				PriceAtPurchase: item.Price,
 			}
-			if err := tx.ModelContext(c, orderItem).Insert(); err != nil {
+			if _, err := tx.ModelContext(c, orderItem).Insert(); err != nil {
 				return err
 			}
 			orderItems = append(orderItems, orderItem)

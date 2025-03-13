@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/go-pg/pg/v10"
+	"github.com/go-pg/pg/v10/orm"
 	"github.com/google/uuid"
 )
 
@@ -71,6 +72,7 @@ type Product struct {
 type Order struct {
 	ID              uuid.UUID   `pg:"id,type:uuid,pk,default:gen_random_uuid()"`
 	UserID          uuid.UUID   `pg:"user_id,type:uuid,notnull"`
+	ShopID          uuid.UUID   `pg:"shop_id,type:uuid,notnull"` // Thêm ShopID
 	TotalAmount     float64     `pg:"total_amount,notnull"`
 	Status          OrderStatus `pg:"status,notnull,type:order_status,default:'pending'"`
 	ShippingAddress string      `pg:"shipping_address,notnull"`
@@ -78,6 +80,7 @@ type Order struct {
 	UpdatedAt       time.Time   `pg:"updated_at,notnull,default:now()"`
 	// Relations
 	User       *User        `pg:"rel:belongs-to"`
+	Shop       *Shop        `pg:"rel:belongs-to"` // Thêm quan hệ với Shop
 	OrderItems []*OrderItem `pg:"rel:has-many"`
 }
 
@@ -104,7 +107,7 @@ func CreateSchema(db *pg.DB) error {
 	}
 
 	for _, model := range models {
-		err := db.Model(model).CreateTable(&pg.CreateTableOptions{
+		err := db.Model(model).CreateTable(&orm.CreateTableOptions{
 			IfNotExists: true,
 		})
 		if err != nil {

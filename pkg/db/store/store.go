@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/go-pg/pg/v10"
 	"github.com/google/uuid"
@@ -296,6 +297,41 @@ func (s *Store) UpdateOrderStatus(ctx context.Context, orderID uuid.UUID, status
 	order.Status = status
 	_, err = s.db.ModelContext(ctx, order).WherePK().Update()
 	return order, err
+}
+
+// Thêm method để lấy đơn hàng theo shop
+func (s *Store) GetOrdersByShopID(ctx context.Context, shopID uuid.UUID, limit, offset int) ([]*models.Order, error) {
+	var orders []*models.Order
+	err := s.db.ModelContext(ctx, &orders).
+		Where("shop_id = ?", shopID).
+		Order("created_at DESC").
+		Limit(limit).
+		Offset(offset).
+		Select()
+	return orders, err
+}
+
+// Thêm thống kê đơn hàng cho shop
+func (s *Store) GetShopOrderStatistics(ctx context.Context, shopID uuid.UUID, startDate, endDate time.Time) (map[string]interface{}, error) {
+	var result struct {
+		TotalOrders  int     `pg:"total_orders"`
+		TotalRevenue float64 `pg:"total_revenue"`
+	}
+
+	_, err := s.db.QueryOneContext(ctx, &result, `
+		SELECT COUNT(*) as total_orders, SUM(total_amount) as total_revenue
+		FROM orders
+		WHERE shop_id = ? AND created_at BETWEEN ? AND ?
+	`, shopID, startDate, endDate)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"total_orders":  result.TotalOrders,
+		"total_revenue": result.TotalRevenue,
+	}, nil
 }
 
 // Transaction support

@@ -38,6 +38,7 @@ CREATE TABLE products (
 CREATE TABLE orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id),
+  shop_id UUID NOT NULL REFERENCES shops(id), -- Thêm shop_id
   total_amount DECIMAL(12,2) NOT NULL,
   status order_status NOT NULL DEFAULT 'pending',
   shipping_address TEXT NOT NULL,
@@ -61,3 +62,4 @@ CREATE INDEX idx_products_category ON products(category);
 CREATE INDEX idx_orders_user_id ON orders(user_id);
 CREATE INDEX idx_order_items_order_id ON order_items(order_id);
 CREATE INDEX idx_order_items_product_id ON order_items(product_id);
+CREATE INDEX idx_orders_shop_id ON orders(shop_id);
