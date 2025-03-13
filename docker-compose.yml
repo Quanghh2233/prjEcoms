@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    environment:
+      - ENVIRONMENT=production
+      - DB_DRIVER=postgres
+      - DB_SOURCE=postgresql://qhh:2203@db:5432/ecommerce?sslmode=disable
+      - PORT=8080
+      - JWT_SECRET=your_secret_key_here_must_be_at_least_32_characters
+      - INIT_DB=true
+    volumes:
+      - .:/app
+    restart: on-failure
+
+  db:
+    image: postgres:14-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=qhh
+      - POSTGRES_PASSWORD=2203
+      - POSTGRES_DB=ecommerce
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qhh -d ecommerce"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
